@@ -1,11 +1,13 @@
 # Hugo Converter Backend API
 
-Backend service for converting YouTube and SoundCloud links to MP3 format.
+Backend service for converting YouTube and SoundCloud links to MP3 and MP4 formats.
 
 ## Features
 
 - ✅ YouTube to MP3 conversion using yt-dlp
+- ✅ YouTube to MP4 download with quality selection (480p, 720p, 1080p, 4K+)
 - ✅ SoundCloud to MP3 conversion
+- ✅ Real-time progress updates via Server-Sent Events (SSE)
 - ✅ REST API with Express
 - ✅ Docker support
 - ✅ Health check endpoint
@@ -33,17 +35,37 @@ Response:
 }
 ```
 
-### Convert Audio
+### Progress Stream (SSE)
+```
+GET /api/convert/progress/:conversionId
+```
+
+Returns real-time progress updates via Server-Sent Events.
+
+### Convert Audio/Video
 ```
 POST /api/convert
 Content-Type: application/json
 
 {
-  "url": "https://youtube.com/watch?v=..."
+  "url": "https://youtube.com/watch?v=...",
+  "conversionId": "conv_1234567890",
+  "format": "mp3",        // "mp3" | "mp4" (mp4 only for YouTube)
+  "quality": "high"       // "best" | "high" | "medium" | "low" (only for mp4)
 }
 ```
 
-Response: Binary MP3 file with proper headers
+**Format options:**
+- `mp3`: Audio only (default)
+- `mp4`: Video with audio (YouTube only)
+
+**Quality options (for MP4):**
+- `best`: Best available quality (4K+)
+- `high`: 1080p (Full HD)
+- `medium`: 720p (HD)
+- `low`: 480p (SD)
+
+Response: Binary MP3 or MP4 file with proper headers
 
 ## Local Development
 
@@ -91,27 +113,52 @@ PORT=3001
 
 ## Usage Example
 
-### cURL
+### cURL - Convert to MP3
 ```bash
 curl -X POST http://localhost:3001/api/convert \
   -H "Content-Type: application/json" \
-  -d '{"url":"https://youtube.com/watch?v=dQw4w9WgXcQ"}' \
+  -d '{"url":"https://youtube.com/watch?v=dQw4w9WgXcQ","conversionId":"conv_123","format":"mp3"}' \
   --output song.mp3
+```
+
+### cURL - Download MP4 (1080p)
+```bash
+curl -X POST http://localhost:3001/api/convert \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://youtube.com/watch?v=dQw4w9WgXcQ","conversionId":"conv_124","format":"mp4","quality":"high"}' \
+  --output video.mp4
 ```
 
 ### JavaScript/Fetch
 ```javascript
+// MP3 Conversion
 const response = await fetch('http://localhost:3001/api/convert', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ url: 'https://youtube.com/watch?v=dQw4w9WgXcQ' })
+  body: JSON.stringify({ 
+    url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+    conversionId: 'conv_123',
+    format: 'mp3'
+  })
+})
+
+// MP4 Download
+const response = await fetch('http://localhost:3001/api/convert', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ 
+    url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+    conversionId: 'conv_124',
+    format: 'mp4',
+    quality: 'high'
+  })
 })
 
 const blob = await response.blob()
 const url = URL.createObjectURL(blob)
 const a = document.createElement('a')
 a.href = url
-a.download = 'song.mp3'
+a.download = 'file.mp3' // or 'file.mp4'
 a.click()
 ```
 

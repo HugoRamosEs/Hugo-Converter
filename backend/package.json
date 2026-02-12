@@ -1,7 +1,7 @@
 {
   "name": "hugo-converter-backend",
-  "version": "1.0.0",
-  "description": "Backend API for YouTube and SoundCloud to MP3 conversion",
+  "version": "1.0.1",
+  "description": "Backend API for YouTube and SoundCloud conversion",
   "main": "server.js",
   "type": "module",
   "scripts": {

@@ -1,11 +1,12 @@
 # Hugo Converter
 ![license](https://img.shields.io/badge/license-MIT-blue) ![type](https://img.shields.io/badge/type-web%20app-orange) ![platform](https://img.shields.io/badge/platform-cross--platform-green)
 
-Una aplicación web moderna para convertir vídeos de YouTube y pistas de SoundCloud a formato MP3.
+Una aplicación web moderna para convertir y descargar contenido de YouTube y SoundCloud en formatos MP3 y MP4.
 
 ## ✨ Características
 
-- ✅ Convierte vídeos de YouTube a MP3
+- ✅ Convierte vídeos de YouTube a MP3 (solo audio)
+- ✅ Descarga vídeos de YouTube a MP4 con selección de calidad (480p, 720p, 1080p, 4K+)
 - ✅ Convierte pistas de SoundCloud a MP3
 - ✅ Totalmente responsive (móvil, tablet, escritorio)
 - ✅ Progreso de conversión en tiempo real con Server-Sent Events (SSE)
@@ -105,11 +106,27 @@ docker run -p 3001:3001 hugo-converter-backend
 
 ## 📖 Uso
 
-1. Selecciona la plataforma (YouTube o SoundCloud)
-2. Pega la URL del vídeo o pista
+### YouTube
+1. Selecciona la pestaña "YouTube"
+2. Elige el formato de salida:
+   - **MP3**: Solo audio en alta calidad
+   - **MP4**: Vídeo completo con audio
+3. Si elegiste MP4, selecciona la calidad deseada:
+   - **Mejor calidad (4K+)**: Máxima resolución disponible
+   - **Alta calidad (1080p)**: Full HD
+   - **Calidad media (720p)**: HD
+   - **Calidad baja (480p)**: SD
+4. Pega la URL del vídeo de YouTube
+5. Haz clic en "Convertir a MP3" o "Descargar Vídeo"
+6. Observa el progreso en tiempo real
+7. El archivo se descargará automáticamente cuando esté listo
+
+### SoundCloud
+1. Selecciona la pestaña "SoundCloud"
+2. Pega la URL de la pista
 3. Haz clic en "Convertir a MP3"
-4. Observa el progreso de la conversión en tiempo real
-5. El archivo se descargará automáticamente cuando esté listo
+4. Observa el progreso de la conversión
+5. El archivo MP3 se descargará automáticamente
 
 ## 📁 Estructura del Proyecto
 
@@ -144,6 +161,8 @@ Hugo-Converter/
 - **Responsive Design**: Optimizado con breakpoints móvil y tablet
 - **Animaciones Sutiles**: Transiciones suaves sin excesos para mejor rendimiento
 - **Progreso Real**: Server-Sent Events (SSE) para actualizaciones de progreso en tiempo real
+- **Selector de Formato**: Interfaz intuitiva para elegir entre MP3 y MP4 (YouTube)
+- **Selector de Calidad**: Desplegable elegante para elegir la calidad del vídeo MP4
 - **UX Mejorada**: Feedback visual inmediato y mensajes descriptivos en español
 
 ## 🔧 API Endpoints
@@ -167,9 +186,13 @@ Endpoint principal de conversión
 ```json
 {
   "url": "https://youtube.com/watch?v=...",
-  "conversionId": "conv_123456789"
+  "conversionId": "conv_123456789",
+  "format": "mp3",        // "mp3" | "mp4" (solo para YouTube)
+  "quality": "high"       // "best" | "high" | "medium" | "low" (solo para MP4)
 }
 ```
+
+**Respuesta**: Archivo binario (MP3 o MP4) con headers apropiados
 
 ## 📄 Licencia
 

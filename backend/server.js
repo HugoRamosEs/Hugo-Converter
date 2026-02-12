@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { convertYouTube } from './converters/youtube.js'
+import { convertYouTube, downloadYouTubeVideo } from './converters/youtube.js'
 import { convertSoundCloud } from './converters/soundcloud.js'
 
 const app = express()
@@ -47,7 +47,7 @@ app.get('/api/convert/progress/:conversionId', (req, res) => {
 
 // Main conversion endpoint
 app.post('/api/convert', async (req, res) => {
-  const { url, conversionId } = req.body
+  const { url, conversionId, format = 'mp3', quality = 'high' } = req.body
 
   if (!url) {
     return res.status(400).json({ error: 'La URL es obligatoria' })
@@ -57,7 +57,7 @@ app.post('/api/convert', async (req, res) => {
     return res.status(400).json({ error: 'ID de conversión obligatorio' })
   }
 
-  console.log('Solicitud de conversión recibida:', url, 'ID:', conversionId)
+  console.log('Solicitud de conversión recibida:', url, 'ID:', conversionId, 'Formato:', format, 'Calidad:', quality)
 
   // Function to send progress updates to all connected clients
   const sendProgress = (progress, message) => {
@@ -77,13 +77,22 @@ app.post('/api/convert', async (req, res) => {
   try {
     let result
     let platform
+    let contentType = 'audio/mpeg'
 
     // Detect platform
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
       platform = 'youtube'
       console.log('Plataforma: YouTube')
       sendProgress(5, 'Conectando con YouTube...')
-      result = await convertYouTube(url, sendProgress)
+      
+      if (format === 'mp4') {
+        console.log('Descargando vídeo MP4 en calidad:', quality)
+        result = await downloadYouTubeVideo(url, quality, sendProgress)
+        contentType = 'video/mp4'
+      } else {
+        console.log('Convirtiendo a MP3')
+        result = await convertYouTube(url, sendProgress)
+      }
     } else if (url.includes('soundcloud.com')) {
       platform = 'soundcloud'
       console.log('Plataforma: SoundCloud')
@@ -114,7 +123,7 @@ app.post('/api/convert', async (req, res) => {
     activeConversions.delete(conversionId)
 
     // Send the file with proper headers
-    res.setHeader('Content-Type', 'audio/mpeg')
+    res.setHeader('Content-Type', contentType)
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition')
     
     const encodedFilename = encodeURIComponent(result.filename)

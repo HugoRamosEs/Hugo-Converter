@@ -17,6 +17,8 @@ export default function ConversionForm({ platform }: ConversionFormProps) {
     type: null,
     message: '',
   })
+  const [format, setFormat] = useState<'mp3' | 'mp4'>('mp3')
+  const [quality, setQuality] = useState<'best' | 'high' | 'medium' | 'low'>('high')
 
   const buttonBg = platform === 'youtube' 
     ? 'bg-youtube-primary hover:bg-youtube-hover' 
@@ -80,7 +82,12 @@ export default function ConversionForm({ platform }: ConversionFormProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url, conversionId }),
+        body: JSON.stringify({ 
+          url, 
+          conversionId,
+          format: platform === 'youtube' ? format : 'mp3',
+          quality: format === 'mp4' ? quality : undefined
+        }),
       })
 
       // Close the SSE connection
@@ -97,7 +104,7 @@ export default function ConversionForm({ platform }: ConversionFormProps) {
       const blob = await response.blob()
       
       const contentDisposition = response.headers.get('Content-Disposition')
-      let filename = 'audio.mp3'
+      let filename = format === 'mp4' ? 'video.mp4' : 'audio.mp3'
       
       if (contentDisposition) {
         let match = contentDisposition.match(/filename="([^"]+)"/)
@@ -160,14 +167,101 @@ export default function ConversionForm({ platform }: ConversionFormProps) {
       <div className="bg-[#2b2b2b] rounded-xl p-8 border border-[#3f3f3f]">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-white mb-2">
-            {platform === 'youtube' ? 'YouTube' : 'SoundCloud'} a MP3
+            {platform === 'youtube' ? 'YouTube' : 'SoundCloud'} a {platform === 'youtube' ? format.toUpperCase() : 'MP3'}
           </h2>
           <p className="text-gray-400 text-base">
-            Pega el enlace y descarga tu audio en alta calidad
+            Pega el enlace y descarga {platform === 'youtube' && format === 'mp4' ? 'tu vídeo' : 'tu audio'} en alta calidad
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Format selection for YouTube */}
+          {platform === 'youtube' && (
+            <div>
+              <label className="block text-base font-semibold text-gray-300 mb-3">
+                Formato de salida
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormat('mp3')}
+                  disabled={isConverting}
+                  className={`
+                    px-4 py-3 rounded-lg font-medium text-base
+                    transition-all duration-200
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    ${format === 'mp3'
+                      ? 'bg-red-500 text-white border-2 border-red-500'
+                      : 'bg-[#1a1a1a] text-gray-300 border-2 border-[#3f3f3f] hover:border-red-500'
+                    }
+                  `}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                    </svg>
+                    Audio MP3
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormat('mp4')}
+                  disabled={isConverting}
+                  className={`
+                    px-4 py-3 rounded-lg font-medium text-base
+                    transition-all duration-200
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    ${format === 'mp4'
+                      ? 'bg-red-500 text-white border-2 border-red-500'
+                      : 'bg-[#1a1a1a] text-gray-300 border-2 border-[#3f3f3f] hover:border-red-500'
+                    }
+                  `}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Vídeo MP4
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Quality selection for MP4 */}
+          {platform === 'youtube' && format === 'mp4' && (
+            <div>
+              <label htmlFor="quality-select" className="block text-base font-semibold text-gray-300 mb-3">
+                Calidad del vídeo
+              </label>
+              <div className="relative">
+                <select
+                  id="quality-select"
+                  value={quality}
+                  onChange={(e) => setQuality(e.target.value as 'best' | 'high' | 'medium' | 'low')}
+                  disabled={isConverting}
+                  className={`
+                    w-full px-5 py-4 text-base bg-[#1a1a1a] border-2 border-[#3f3f3f] rounded-lg
+                    text-white appearance-none cursor-pointer
+                    focus:outline-none focus:border-red-500
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-all duration-200
+                  `}
+                >
+                  <option value="best" className="bg-[#1a1a1a] text-white">Mejor calidad (4K+)</option>
+                  <option value="high" className="bg-[#1a1a1a] text-white">Alta calidad (1080p)</option>
+                  <option value="medium" className="bg-[#1a1a1a] text-white">Calidad media (720p)</option>
+                  <option value="low" className="bg-[#1a1a1a] text-white">Calidad baja (480p)</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="url-input" className="block text-base font-semibold text-gray-300 mb-3">
               URL de {platform === 'youtube' ? 'YouTube' : 'SoundCloud'}
@@ -181,7 +275,7 @@ export default function ConversionForm({ platform }: ConversionFormProps) {
                 placeholder={`https://${platform === 'youtube' ? 'youtube.com/watch?v=' : 'soundcloud.com/'}...`}
                 disabled={isConverting}
                 className={`
-                  w-full px-5 py-4 text-base bg-[#1a1a1a] border rounded-lg
+                  w-full px-5 py-4 text-base bg-[#1a1a1a] border-2 rounded-lg
                   text-white placeholder-gray-500
                   focus:outline-none focus:bg-[#1a1a1a]
                   disabled:opacity-50 disabled:cursor-not-allowed
@@ -227,7 +321,10 @@ export default function ConversionForm({ platform }: ConversionFormProps) {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Convertir a MP3
+                {platform === 'youtube' && format === 'mp4' 
+                  ? `Descargar Vídeo ${quality === 'best' ? '4K+' : quality === 'high' ? '1080p' : quality === 'medium' ? '720p' : '480p'}`
+                  : 'Convertir a MP3'
+                }
               </span>
             </button>
           )}
