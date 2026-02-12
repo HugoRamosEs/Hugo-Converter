@@ -1,0 +1,25 @@
+# CODEOWNERS file for Hugo-Converter
+# This file defines who is responsible for code in this repository
+# Code owners will be automatically requested for review when someone opens a pull request
+
+# The owner of all project code
+* @HugoRamosEs
+
+# Frontend (Next.js, React, TypeScript)
+/app/** @HugoRamosEs
+/components/** @HugoRamosEs
+*.tsx @HugoRamosEs
+*.ts @HugoRamosEs
+
+# Backend (Express, Node.js)
+/backend/** @HugoRamosEs
+/backend/converters/** @HugoRamosEs
+
+# Configuration and documentation
+*.md @HugoRamosEs
+*.json @HugoRamosEs
+*.config.* @HugoRamosEs
+.gitignore @HugoRamosEs
+
+# GitHub Actions and workflows
+/.github/** @HugoRamosEs
