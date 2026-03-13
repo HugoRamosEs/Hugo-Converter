@@ -5,6 +5,35 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { randomBytes } from 'crypto'
 
+function getSingleVideoYouTubeUrl(rawUrl) {
+  try {
+    const parsedUrl = new URL(rawUrl)
+    const hostname = parsedUrl.hostname.toLowerCase()
+
+    // Normalize youtu.be/<id> URLs to watch URLs
+    if (hostname.includes('youtu.be')) {
+      const videoId = parsedUrl.pathname.replace('/', '').trim()
+      if (!videoId) return rawUrl
+      return `https://www.youtube.com/watch?v=${videoId}`
+    }
+
+    // Only sanitize regular YouTube domains
+    if (!hostname.includes('youtube.com') && !hostname.includes('youtube-nocookie.com')) {
+      return rawUrl
+    }
+
+    const videoId = parsedUrl.searchParams.get('v')
+    if (videoId) {
+      return `https://www.youtube.com/watch?v=${videoId}`
+    }
+
+    return rawUrl
+  } catch {
+    // If URL parsing fails, keep original behavior
+    return rawUrl
+  }
+}
+
 /**
  * Converts a YouTube video to MP3 using yt-dlp
  * @param {string} url - YouTube video URL
@@ -12,6 +41,7 @@ import { randomBytes } from 'crypto'
  * @returns {Promise<{buffer: Buffer, filename: string}>}
  */
 export async function convertYouTube(url, onProgress = null) {
+  const normalizedUrl = getSingleVideoYouTubeUrl(url)
   const tempId = randomBytes(16).toString('hex')
   const tempDir = join(tmpdir(), `youtube-${tempId}`)
   const outputTemplate = join(tempDir, '%(title)s.%(ext)s')
@@ -25,7 +55,7 @@ export async function convertYouTube(url, onProgress = null) {
     console.log('Obteniendo metadatos del vídeo...')
     
     // Get video info first to extract metadata
-    const metadata = await ytDlp(url, {
+  const metadata = await ytDlp(normalizedUrl, {
       dumpSingleJson: true,
       noWarnings: true,
       noCallHome: true,
@@ -43,7 +73,7 @@ export async function convertYouTube(url, onProgress = null) {
     
     // Download and convert to MP3 using yt-dlp with progress tracking
     let lastProgress = 25
-    await ytDlp(url, {
+  await ytDlp(normalizedUrl, {
       extractAudio: true,
       audioFormat: 'mp3',
       audioQuality: 0,
@@ -157,6 +187,7 @@ export async function convertYouTube(url, onProgress = null) {
  * @returns {Promise<{buffer: Buffer, filename: string, metadata: object}>}
  */
 export async function downloadYouTubeVideo(url, quality = 'high', onProgress = null) {
+  const normalizedUrl = getSingleVideoYouTubeUrl(url)
   const tempId = randomBytes(16).toString('hex')
   const tempDir = join(tmpdir(), `youtube-video-${tempId}`)
   const outputTemplate = join(tempDir, '%(title)s.%(ext)s')
@@ -170,7 +201,7 @@ export async function downloadYouTubeVideo(url, quality = 'high', onProgress = n
     console.log('Obteniendo metadatos del vídeo...')
     
     // Get video info first to extract metadata
-    const metadata = await ytDlp(url, {
+  const metadata = await ytDlp(normalizedUrl, {
       dumpSingleJson: true,
       noWarnings: true,
       noCallHome: true,
@@ -208,7 +239,7 @@ export async function downloadYouTubeVideo(url, quality = 'high', onProgress = n
 
     // Download video with progress tracking
     let lastProgress = 25
-    await ytDlp(url, {
+  await ytDlp(normalizedUrl, {
       format: formatSelection,
       output: outputTemplate,
       noPlaylist: true,
